@@ -91,5 +91,16 @@ class ICM(nn.Module):
         }
 
         return ICMResults(r_int, loss, info)
+    
+    # just returns the intrinsic reward
+    @torch.no_grad()
+    def intrinsic_reward(
+        self,
+        obs: torch.Tensor,
+        next_obs: torch.Tensor,
+        action: torch.Tensor,
+    ) -> torch.Tensor:
+        out = self.forward(obs, next_obs, action)
+        return out.r_int
         
      

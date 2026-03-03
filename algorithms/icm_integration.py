@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from icm import ICM
 from typing import Deque, Tuple, Optional, Dict, Any
 
@@ -5,6 +7,7 @@ import numpy as np
 import gymnasium as gym
 import torch
 
+@dataclass
 class TransitionBatch:
     obs: torch.Tensor      
     action: torch.Tensor    
@@ -18,14 +21,14 @@ class ICMIntegration(gym.Wrapper):
         icm_optimizer: torch.optim.Optimizer,
         *,
         lam: float = 0.1,
-        use_intrinsic_reward: bool = False,  # start False, then turn True once stable
+        use_intrinsic_reward: bool = False,  
         device: str = "cpu",
         buffer_size: int = 50_000,
         batch_size: int = 256,
-        icm_updates_per_call: int = 2,       # how many gradient steps per train call
+        icm_updates_per_call: int = 2,       
         grad_clip_norm: float = 0.5,
     ):
-        super().__init__()
+        super().__init__(env)
         self.icm = icm.to(device)
         self.icm_optimizer = icm_optimizer
         self.lambda_icm = float(lam)
@@ -123,8 +126,8 @@ class ICMIntegration(gym.Wrapper):
 
         if icm_loss_vals:
             logs["icm_loss"] = float(np.mean(icm_loss_vals))
-            logs["inv_loss"] = float(np.mean(inv_loss_vals))
-            logs["fwd_loss"] = float(np.mean(fwd_loss_vals))
+            logs["inv_loss"] = float(np.mean(inverse_loss_vals))
+            logs["fwd_loss"] = float(np.mean(forward_loss_vals))
             logs["r_int_mean"] = float(np.mean(r_int_mean_vals))
             logs["icm_train_skipped"] = 0.0
         else:

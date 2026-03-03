@@ -18,4 +18,3 @@ model = PPO("MlpPolicy",
 model.learn(total_timesteps=300_000)
 model.save("ppo_lift_baseline")
 env.close()
-            
