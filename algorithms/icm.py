@@ -26,6 +26,7 @@ class ICMResults:
         self.r_int = r_int
         self.loss = loss
         self.info = info
+        
 # this is based on Pathak et al's implementation of ICM
 class ICM(nn.Module):
     def __init__(
@@ -52,6 +53,7 @@ class ICM(nn.Module):
 
         # this is the third neural net: forward model
         self.forward_model = MLP(feature_dim + action_dim, feature_dim, hidden)
+
     def forward(self, obs: torch.Tensor, next_obs: torch.Tensor, action: torch.Tensor) -> ICMResults:
         # cast to floats
         obs = obs.float()
@@ -79,7 +81,7 @@ class ICM(nn.Module):
         # intrinsic reward
         r_int = (self.forward_scale * forward_error).detach() # detach so no backprop
 
-        loss = 1 - self.beta * inverse_loss + self.beta * forward_loss
+        loss = (1 - self.beta) * inverse_loss + self.beta * forward_loss 
 
         # to show on tensorboard..
         info = {

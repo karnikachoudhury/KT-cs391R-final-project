@@ -12,8 +12,6 @@ def make_env():
         control_freq = 20,
         horizon = 200,
     )
-
     env = GymWrapper(env)
     env = Monitor(env)
-
     return env

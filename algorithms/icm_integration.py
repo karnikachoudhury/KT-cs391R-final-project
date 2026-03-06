@@ -20,7 +20,7 @@ class ICMIntegration(gym.Wrapper):
         icm: ICM,
         icm_optimizer: torch.optim.Optimizer,
         *,
-        lam: float = 0.1,
+        lam: float = 0.1, # scales intrinsic reward
         use_intrinsic_reward: bool = False,  
         device: str = "cpu",
         buffer_size: int = 50_000,
@@ -56,6 +56,7 @@ class ICMIntegration(gym.Wrapper):
         observation = observation.astype(np.float32)
         self.previous_observation = observation
         return observation, info
+    
     # step function that computes intrinsic reward and stores transitions in buffer
     def step(self, action: np.ndarray):
         action_np = np.asarray(action, dtype=np.float32)
@@ -73,12 +74,16 @@ class ICMIntegration(gym.Wrapper):
         # logging for tensor board
         info = dict(info)
         info["reward_extrinsic"] = float(r_ext)
-        info["reward_intrinsic"] = float(r_int)
+        info["reward_intrinsic"] = float(self.lambda_icm * r_int)
         info["reward_total"] = float(r_ext + self.lambda_icm * r_int)  # total even if PPO isn't using it yet
         info["icm_buffer_size"] = len(self.buffer)
+        info["success"] = float(self.env.env.env._check_success()) 
+        if info["success"]:
+            print("Success!!!")
 
         self.previous_observation = next_observation
         return next_observation, r_total, terminated, truncated, info
+    
     # get random batch from buffer and update ICM parameters
     def sample_batch(self) -> Optional[TransitionBatch]:
         if(len(self.buffer) < self.batch_size):
@@ -94,9 +99,12 @@ class ICMIntegration(gym.Wrapper):
             action = torch.as_tensor(act_b, dtype=torch.float32, device=self.device),
             next_obs = torch.as_tensor(nxt_b, dtype=torch.float32, device=self.device),
         )
+    
     def train_icm(self) -> Dict[str, Any]:
         logs: Dict[str, Any] = {}
-
+        if not self.use_intrinsic_reward:
+            logs["icm_train_skipped"] = 1.0
+            return logs
         batch = self.sample_batch()
         if batch is None:
             logs["icm_loss"] = 1.0
@@ -121,6 +129,9 @@ class ICMIntegration(gym.Wrapper):
             self.icm_optimizer.step()
 
             icm_loss_vals.append(float(out.info["icm_loss"].item()))
+            inverse_loss_vals.append(float(out.info["inv_loss"].item()))
+            forward_loss_vals.append(float(out.info["fwd_loss"].item()))
+            r_int_mean_vals.append(float(out.info["r_int_mean"].item()))
 
         self.icm.eval()
 
@@ -132,5 +143,6 @@ class ICMIntegration(gym.Wrapper):
             logs["icm_train_skipped"] = 0.0
         else:
             logs["icm_train_skipped"] = 1.0
+        
 
         return logs
