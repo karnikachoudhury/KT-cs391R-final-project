@@ -24,9 +24,10 @@ class ICMIntegration(gym.Wrapper):
         use_intrinsic_reward: bool = False,  
         device: str = "cpu",
         buffer_size: int = 50_000,
-        batch_size: int = 256,
-        icm_updates_per_call: int = 2,       
+        icm_batch_size: int = 256, # how many samples to use when updating ICM parameters
+        icm_batches_per_call: int = 2, # how many batches to train ICM on per train_icm call       
         grad_clip_norm: float = 0.5,
+        chunk_size: int = 2000,  # number of steps to run PPO before updating ICM
     ):
         super().__init__(env)
         self.icm = icm.to(device)
@@ -35,10 +36,11 @@ class ICMIntegration(gym.Wrapper):
         self.use_intrinsic_reward = use_intrinsic_reward
         self.device = device
         self.buffer: Deque[Tuple[np.ndarray, np.ndarray, np.ndarray]] = Deque(maxlen=buffer_size)
-        self.batch_size = int(batch_size)
-        self.icm_updates_per_call = int(icm_updates_per_call)
+        self.batch_size = int(icm_batch_size)
+        self.icm_updates_per_call = int(icm_batches_per_call)
         self.grad_clip_norm = float(grad_clip_norm)
         self.previous_observation: Optional[np.ndarray] = None
+        self.chunk_size = int(chunk_size)
 
     @torch.no_grad()
     def compute_instrinsic_single(self, obs: np.ndarray, action: np.ndarray, next_obs: np.ndarray) -> float:
@@ -101,10 +103,12 @@ class ICMIntegration(gym.Wrapper):
         )
     
     def train_icm(self) -> Dict[str, Any]:
+        print(f"len buffer: {len(self.buffer)}")
         logs: Dict[str, Any] = {}
         if not self.use_intrinsic_reward:
             logs["icm_train_skipped"] = 1.0
             return logs
+
         batch = self.sample_batch()
         if batch is None:
             logs["icm_loss"] = 1.0

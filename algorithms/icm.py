@@ -31,12 +31,14 @@ class ICMResults:
 class ICM(nn.Module):
     def __init__(
         self,
-        obs_dim: int = 60,
-        action_dim: int = 7,
-        feature_dim: int = 128,
-        beta: float = 0.2,
-        forward_scale: float = 0.5,
-        hidden = (256, 256),
+        obs_dim: int = 60,# dimensions in observation space
+        action_dim: int = 7, # dimensions in action space
+        feature_dim: int = 32, # dimension of encoded features (phi)
+        beta: float = 0.2, # weight for forward loss, inverse loss weight is (1 - beta)
+        forward_scale: float = 0.5, 
+        encoder_hidden = (128, 128, 64), # hidden dimensions for encoder
+        inverse_hidden = (256, 128, 64, 32), # hidden dimensions for inverse model
+        forward_hidden = (128, 256, 128, 64), # hidden dimensions for forward model
     ):
         super().__init__()
         self.obs_dim = obs_dim
@@ -46,13 +48,13 @@ class ICM(nn.Module):
         self.forward_scale = forward_scale
         
         # this is the first neural net: encoder
-        self.encoder = MLP(obs_dim, feature_dim, hidden)
+        self.encoder = MLP(obs_dim, feature_dim, encoder_hidden)
 
         # this is the second neural net: inverse model
-        self.inverse_model = MLP(2 * feature_dim, action_dim, hidden)
+        self.inverse_model = MLP(2 * feature_dim, action_dim, inverse_hidden)
 
         # this is the third neural net: forward model
-        self.forward_model = MLP(feature_dim + action_dim, feature_dim, hidden)
+        self.forward_model = MLP(feature_dim + action_dim, feature_dim, forward_hidden)
 
     def forward(self, obs: torch.Tensor, next_obs: torch.Tensor, action: torch.Tensor) -> ICMResults:
         # cast to floats
