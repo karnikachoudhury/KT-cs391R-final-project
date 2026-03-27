@@ -25,7 +25,7 @@ model = PPO(
     verbose=1,
     n_steps=2048,
     batch_size=64,
-    tensorboard_log="./ppo_lift_tensorboard/thom_test_more_icm/",
+    tensorboard_log="./ppo_lift_tensorboard/",
 )
 
 total_steps = 100000
@@ -41,7 +41,7 @@ for i in range(total_steps // chunk):
         for key, value in icm_logs.items():
             print(f"  {key}: {value}")
 
-def test_model(model, env, eval_episodes=100, do_print=False):
+def test_model(model, env, eval_episodes=300000, do_print=False):
 # test model afterwards
     env.icm.eval()
     with torch.no_grad():

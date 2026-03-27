@@ -13,8 +13,9 @@ model = PPO("MlpPolicy",
             n_epochs = 10,
             learning_rate = 3e-4,
             clip_range = 0.2,
-            tensorboard_log = "./ppo_lift_tensorboard/"
+            tensorboard_log="./ppo_lift_tensorboard/",
 )
-model.learn(total_timesteps=300_000)
+model.learn(total_timesteps=300_000,
+             tb_log_name="baseline")
 model.save("ppo_lift_baseline")
 env.close()
