@@ -56,7 +56,7 @@ def parse_training_log(filepath):
 
     return data
 
-
+# plot a given stat over time, saving to output dir with filename
 def plot_stat(values, title, ylabel, filename, output_dir="plots"):
     os.makedirs(output_dir, exist_ok=True)
 
@@ -71,6 +71,8 @@ def plot_stat(values, title, ylabel, filename, output_dir="plots"):
     plt.savefig(filepath, dpi=300, bbox_inches="tight")
     plt.close()
 
+
+# create a comparison plot with ICM runs having one color, and non-ICM runs having another
 def plot_stat_across_runs(all_stats, stat_name, output_dir="plots"):
     os.makedirs(output_dir, exist_ok=True)
 
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     all_stats = {}
     for input_dir in input_dirs:
         name = dir_to_name[input_dir]
-        data = parse_training_log(os.path.join(input_dir, "output.txt"))
+        data = parse_training_log(os.path.join("outputs", input_dir, "output.txt"))
         all_stats[name] = data
         for stat, values in data.items():
             if len(values) == 0:
