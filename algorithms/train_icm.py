@@ -7,8 +7,8 @@ from icm_integration import ICMIntegration
 base_environment = make_env()
 icm = ICM(obs_dim=60, action_dim=7, feature_dim=128, beta = 0.2, forward_scale=0.5)
 icm_optimizer = torch.optim.Adam(icm.parameters(), lr=1e-3)
-chunk = 2000
-
+chunk = 10000
+n_steps = 2000
 env = ICMIntegration(
     env=base_environment,
     icm=icm,
@@ -25,22 +25,29 @@ model = PPO(
     "MlpPolicy",
     env,
     verbose=1,
-    n_steps=chunk,
+    n_steps=n_steps,
     batch_size=64,
-    tensorboard_log="./test_with_icm_lam_0.1_3/",
+    tensorboard_log=".karnika_messing/",
 )
 
 total_steps = 1000000
 
 for i in range(total_steps // chunk):
     print(f"\nStep {i + 1} / {total_steps // chunk}")
-    model = model.learn(total_timesteps=chunk, reset_num_timesteps=False)
+    model = model.learn(total_timesteps=chunk, reset_num_timesteps=False, tb_log_name="icm")
 
     icm_logs = env.train_icm()
     if icm_logs.get("icm_loss", 0.0) != 0.0:
         print("ICM Logs:")
         for key, value in icm_logs.items():
             print(f"  {key}: {value}")
+        model.logger.record("icm/icm_loss", icm_logs["icm_loss"])
+        model.logger.record("icm/inv_loss", icm_logs["inv_loss"])
+        model.logger.record("icm/fwd_loss", icm_logs["fwd_loss"])
+        model.logger.record("icm/r_int_mean", icm_logs["r_int_mean"])
+
+        # write them to TensorBoard at the current timestep
+        model.logger.dump(model.num_timesteps)
 
 def test_model(model, env, eval_episodes=300000, do_print=False):
 # test model afterwards

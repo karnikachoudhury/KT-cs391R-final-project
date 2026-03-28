@@ -1,2 +1,9 @@
 rl_env
-algorithms/ppo_lift_tensorboard
+.karnika_messing
+ppo_lift_tensorboard
+test_no_icm_1
+test_no_icm_2
+test_no_icm_3
+test_with_icm_lam_0.1_1
+test_with_icm_lam_0.1_2
+test_with_icm_lam_0.1_3

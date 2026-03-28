@@ -110,8 +110,9 @@ if __name__ == "__main__":
         "test_no_icm_1": "Without ICM (1)",
         "test_no_icm_2": "Without ICM (2)",
         "test_no_icm_3": "Without ICM (3)",
+        ".karnika_messing": "With ICM (idk)",
     }
-    input_dirs = ["test_with_icm_lam_0.1_1", "test_with_icm_lam_0.1_2", "test_with_icm_lam_0.1_3", "test_no_icm_1", "test_no_icm_2", "test_no_icm_3"]
+    input_dirs = ["test_with_icm_lam_0.1_1", "test_with_icm_lam_0.1_2", "test_with_icm_lam_0.1_3", "test_no_icm_1", "test_no_icm_2", "test_no_icm_3", ".karnika_messing"]
     all_stats = {}
     for input_dir in input_dirs:
         name = dir_to_name[input_dir]
