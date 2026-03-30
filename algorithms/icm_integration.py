@@ -41,6 +41,7 @@ class ICMIntegration(gym.Wrapper):
         self.grad_clip_norm = float(grad_clip_norm)
         self.previous_observation: Optional[np.ndarray] = None
         self.chunk_size = int(chunk_size)
+        self.success = -1 # have we had success in current episode? -1 if not set
 
     @torch.no_grad()
     def compute_instrinsic_single(self, obs: np.ndarray, action: np.ndarray, next_obs: np.ndarray) -> float:
@@ -57,6 +58,13 @@ class ICMIntegration(gym.Wrapper):
         observation, info  = self.env.reset(**kwargs)
         observation = observation.astype(np.float32)
         self.previous_observation = observation
+        if self.success == -1:
+            self.success = 1
+        elif self.success == 0:
+            print("Success")
+            self.success = 1
+        else:
+            print("Failure")
         return observation, info
     
     # step function that computes intrinsic reward and stores transitions in buffer
@@ -81,7 +89,7 @@ class ICMIntegration(gym.Wrapper):
         info["icm_buffer_size"] = len(self.buffer)
         info["success"] = float(self.env.env.env._check_success()) 
         if info["success"]:
-            print("Success!!!")
+            self.success = 0
 
         self.previous_observation = next_observation
         return next_observation, r_total, terminated, truncated, info

@@ -36,9 +36,9 @@ class ICM(nn.Module):
         feature_dim: int = 32, # dimension of encoded features (phi)
         beta: float = 0.2, # weight for forward loss, inverse loss weight is (1 - beta)
         forward_scale: float = 0.5, 
-        encoder_hidden = (128, 128, 64), # hidden dimensions for encoder
+        encoder_hidden = (256, 128, 64), # hidden dimensions for encoder
         inverse_hidden = (256, 128, 64, 32), # hidden dimensions for inverse model
-        forward_hidden = (128, 256, 128, 64), # hidden dimensions for forward model
+        forward_hidden = (256, 128, 64), # hidden dimensions for forward model
     ):
         super().__init__()
         self.obs_dim = obs_dim
