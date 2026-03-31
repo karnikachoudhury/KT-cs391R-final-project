@@ -59,10 +59,10 @@ class ICMIntegration(gym.Wrapper):
         observation = observation.astype(np.float32)
         self.previous_observation = observation
         if self.success == -1:
-            self.success = 1
-        elif self.success == 0:
+            self.success = 0
+        elif self.success == 1:
             print("Success")
-            self.success = 1
+            self.success = 0
         else:
             print("Failure")
         return observation, info
@@ -89,7 +89,7 @@ class ICMIntegration(gym.Wrapper):
         info["icm_buffer_size"] = len(self.buffer)
         info["success"] = float(self.env.env.env._check_success()) 
         if info["success"]:
-            self.success = 0
+            self.success = 1
 
         self.previous_observation = next_observation
         return next_observation, r_total, terminated, truncated, info

@@ -16,7 +16,6 @@ def parse_training_log(filepath):
         lines = f.readlines()
 
     step = -1
-    had_success = False
     successes = 0
 
     for line in lines:
@@ -27,14 +26,13 @@ def parse_training_log(filepath):
             break
 
         if line.startswith("Success"):
-            had_success = True
-        
+            successes += 1
+            data["Successful Epochs"].append(successes)
+        elif line.startswith("Failure"):
+            data["Successful Epochs"].append(successes)
+
         elif line.startswith("Step"):
             step += 1
-            if had_success:
-                successes += 1
-            data["Successful Epochs"].append(successes)
-            had_success = False
 
         elif "ep_rew_mean" in line:
             data["Avg. Reward"].append(float(line.split("|")[2]))
@@ -104,15 +102,13 @@ def plot_stat_across_runs(all_stats, stat_name, output_dir="plots"):
 
 if __name__ == "__main__":
     dir_to_name = {
-        "test_with_icm_lam_0.1_1": "With ICM (1)",
-        "test_with_icm_lam_0.1_2": "With ICM (2)",
-        "test_with_icm_lam_0.1_3": "With ICM (3)",
-        "test_no_icm_1": "Without ICM (1)",
-        "test_no_icm_2": "Without ICM (2)",
-        "test_no_icm_3": "Without ICM (3)",
-        ".karnika_messing": "With ICM (idk)",
-    }
-    input_dirs = ["test_with_icm_lam_0.1_1", "test_with_icm_lam_0.1_2", "test_with_icm_lam_0.1_3", "test_no_icm_1", "test_no_icm_2", "test_no_icm_3", ".karnika_messing"]
+        "outputs/icm_False_epochs_100_horizon_400_eps_5_updates_5_dense_True_beta_0.2_lr_0.001_lambda_0.1": "NCIM, 400H, Dense, MUE",
+        "outputs/icm_False_epochs_250_horizon_400_eps_10_updates_1_dense_True_beta_0.2_lr_0.001_lambda_0.1": "NICM, 400H, Dense",
+        "outputs/icm_False_epochs_500_horizon_200_eps_10_updates_1_dense_False_beta_0.2_lr_0.001_lambda_0.01": "NICM, 200H, Sparse",
+        "outputs/icm_True_epochs_250_horizon_400_eps_10_updates_1_dense_True_beta_0.2_lr_0.001_lambda_0.01": "ICM, 400H, Dense",
+        "outputs/icm_True_epochs_500_horizon_200_eps_10_updates_1_dense_False_beta_0.2_lr_0.001_lambda_0.01": "ICM, 200H, Sparse",
+        }
+    input_dirs = dir_to_name.keys()
     all_stats = {}
     for input_dir in input_dirs:
         name = dir_to_name[input_dir]
@@ -123,5 +119,5 @@ if __name__ == "__main__":
                 continue
             plot_stat(values, f"{name}: {stat} over Time", stat, f"{stat}.png", output_dir=os.path.join(input_dir, "plots"))
 
-    plot_stat_across_runs(all_stats, "Avg. Reward")
-    plot_stat_across_runs(all_stats, "Successful Epochs")
+    # plot_stat_across_runs(all_stats, "Avg. Reward")
+    # plot_stat_across_runs(all_stats, "Successful Epochs")

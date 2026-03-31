@@ -5,7 +5,7 @@ from icm import ICM
 from icm_integration import ICMIntegration
 import os
 
-def test_model(model, env, output_dir, run_name, eval_episodes=10):
+def test_model(model, env, output_dir, run_name, eval_episodes=100):
 # test model afterwards
     output_file = open(os.path.join(output_dir, f"test_{run_name}.txt"), "w")
     output_file.write("\nTesting model\n")
@@ -138,18 +138,30 @@ if __name__ == "__main__":
     # outputs for each run will get copied over to an output.txt file in the respective dir
     # can also specify output dir as a parameter
     
+    # train_icm(        
+    #     env_horizon=200, 
+    #     env_dense_reward=True, 
+    #     icm_beta=0.2, 
+    #     icm_lr=1e-3, 
+    #     env_lambda=0.1, 
+    #     use_icm=True, 
+    #     eps_per_update=10, # n_steps = this * horizon
+    #     updates_per_epoch=5, # chunks = this * n_steps
+    #     epochs=100,
+    # )
+
     train_icm(        
-        env_horizon=200, 
+        env_horizon=400, 
         env_dense_reward=True, 
         icm_beta=0.2, 
         icm_lr=1e-3, 
         env_lambda=0.1, 
-        use_icm=True, 
-        eps_per_update=10, # n_steps = this * horizon
-        updates_per_epoch=5, # chunks = this * n_steps
+        use_icm=False, 
+        eps_per_update=5,
+        updates_per_epoch=5,
         epochs=100,
-
     )
+
     train_icm(        
         env_horizon=400, 
         env_dense_reward=True, 
@@ -158,8 +170,46 @@ if __name__ == "__main__":
         env_lambda=0.1, 
         use_icm=False, 
         eps_per_update=10,
-        updates_per_epoch=5,
-        epochs=100,
+        updates_per_epoch=1,
+        epochs=250,
     )
+    # looks hopeful, check charts
+    train_icm(        
+        env_horizon=400, 
+        env_dense_reward=True, 
+        icm_beta=0.2, 
+        icm_lr=1e-3, 
+        env_lambda=0.01, 
+        use_icm=True, 
+        eps_per_update=10,
+        updates_per_epoch=1,
+        epochs=250,
+    )
+
+    train_icm(        
+        env_horizon=200, 
+        env_dense_reward=False, 
+        icm_beta=0.2, 
+        icm_lr=1e-3, 
+        env_lambda=0.01, 
+        use_icm=True, 
+        eps_per_update=10,
+        updates_per_epoch=1,
+        epochs=500,
+    )
+
+    train_icm(        
+        env_horizon=200, 
+        env_dense_reward=False, 
+        icm_beta=0.2, 
+        icm_lr=1e-3, 
+        env_lambda=0.01, 
+        use_icm=False, 
+        eps_per_update=10,
+        updates_per_epoch=1,
+        epochs=500,
+    )
+
+
 
     copy_outputs("results.txt")

@@ -1,0 +1,73 @@
+
+Testing model
+Episode 0:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 0.00021434653550386429
+  R_total: 0.00021434653550386429
+Episode 1:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 8.574599400162697e-05
+  R_total: 8.574599400162697e-05
+Episode 2:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 7.871259935200214e-05
+  R_total: 7.871259935200214e-05
+Episode 3:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 9.197803214192391e-05
+  R_total: 9.197803214192391e-05
+Episode 4:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 9.142465889453888e-05
+  R_total: 9.142465889453888e-05
+Episode 5:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 9.303068742156029e-05
+  R_total: 9.303068742156029e-05
+Episode 6:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 7.473863661289215e-05
+  R_total: 7.473863661289215e-05
+Episode 7:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 0.0002546684816479683
+  R_total: 0.0002546684816479683
+Episode 8:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 7.776102051138877e-05
+  R_total: 7.776102051138877e-05
+Episode 9:
+  Steps: 200
+  Had Success: False
+  End Success: 0.0
+  R_e: 0.0
+  R_i: 0.00021280121058225631
+  R_total: 0.00021280121058225631
+Had success rate: 0.0%
