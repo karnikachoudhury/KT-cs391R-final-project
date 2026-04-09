@@ -1,0 +1,704 @@
+
+Testing model
+Episode 0:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.32363755379637915
+  R_i: 0.00033449240028858183
+  R_total: 0.32363755379637915
+Episode 1:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.08729356646546857
+  R_i: 0.00012372064404189587
+  R_total: 0.08729356646546857
+Episode 2:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.12133420761890988
+  R_i: 0.00029628854244947436
+  R_total: 0.12133420761890988
+Episode 3:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.03996380904450791
+  R_i: 0.0002382611483335495
+  R_total: 0.03996380904450791
+Episode 4:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.36578798049570493
+  R_i: 0.00012583632953464986
+  R_total: 0.36578798049570493
+Episode 5:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.43751406808914983
+  R_i: 9.144317358732224e-05
+  R_total: 0.43751406808914983
+Episode 6:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.42292059296470275
+  R_i: 0.000170854851603508
+  R_total: 0.42292059296470275
+Episode 7:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4324463559488028
+  R_i: 0.00012175517156720162
+  R_total: 0.4324463559488028
+Episode 8:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3787875194406711
+  R_i: 0.00014744007959961893
+  R_total: 0.3787875194406711
+Episode 9:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.45303241176758
+  R_i: 0.00016901575028896332
+  R_total: 0.45303241176758
+Episode 10:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.16929311695986815
+  R_i: 8.993590250611305e-05
+  R_total: 0.16929311695986815
+Episode 11:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.007656630453144241
+  R_i: 0.0002735181525349617
+  R_total: 0.007656630453144241
+Episode 12:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.11457782376169569
+  R_i: 9.345731697976589e-05
+  R_total: 0.11457782376169569
+Episode 13:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2990837284118272
+  R_i: 0.00020342707633972168
+  R_total: 0.2990837284118272
+Episode 14:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4106884479690851
+  R_i: 0.0004089665040373802
+  R_total: 0.4106884479690851
+Episode 15:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4283419970417305
+  R_i: 0.0008378943800926208
+  R_total: 0.4283419970417305
+Episode 16:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.22121181529049488
+  R_i: 0.00020147129893302918
+  R_total: 0.22121181529049488
+Episode 17:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.39997654837483354
+  R_i: 0.0002173110470175743
+  R_total: 0.39997654837483354
+Episode 18:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.42206931929143465
+  R_i: 0.00014792755246162415
+  R_total: 0.42206931929143465
+Episode 19:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1736238664285515
+  R_i: 8.840776979923248e-05
+  R_total: 0.1736238664285515
+Episode 20:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4416681027859266
+  R_i: 9.93054360151291e-05
+  R_total: 0.4416681027859266
+Episode 21:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.16352838464058225
+  R_i: 0.0001501914020627737
+  R_total: 0.16352838464058225
+Episode 22:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.36486370104287424
+  R_i: 0.00010033348575234414
+  R_total: 0.36486370104287424
+Episode 23:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3397694563055431
+  R_i: 0.0004908652231097222
+  R_total: 0.3397694563055431
+Episode 24:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.25771747316543425
+  R_i: 0.00028351649641990663
+  R_total: 0.25771747316543425
+Episode 25:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2367342397295762
+  R_i: 0.00015867028385400773
+  R_total: 0.2367342397295762
+Episode 26:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.047878372639061
+  R_i: 0.0001915968768298626
+  R_total: 0.047878372639061
+Episode 27:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4406592022864513
+  R_i: 0.000144906472414732
+  R_total: 0.4406592022864513
+Episode 28:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.41758151332067184
+  R_i: 0.0001061176136136055
+  R_total: 0.41758151332067184
+Episode 29:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.3604741598953573
+  R_i: 8.323137648403644e-05
+  R_total: 0.3604741598953573
+Episode 30:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.22401655914059465
+  R_i: 0.0001331040542572737
+  R_total: 0.22401655914059465
+Episode 31:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3586207335430493
+  R_i: 0.0006372388452291489
+  R_total: 0.3586207335430493
+Episode 32:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.29133657949215896
+  R_i: 0.00013218294829130174
+  R_total: 0.29133657949215896
+Episode 33:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.43780412032752614
+  R_i: 0.00012475507333874702
+  R_total: 0.43780412032752614
+Episode 34:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3235240429571675
+  R_i: 0.00010547221638262273
+  R_total: 0.3235240429571675
+Episode 35:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4343017399397784
+  R_i: 0.0001027769036591053
+  R_total: 0.4343017399397784
+Episode 36:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.2190659864387772
+  R_i: 0.00012122096493840218
+  R_total: 0.2190659864387772
+Episode 37:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3632576765897997
+  R_i: 0.0003386645019054413
+  R_total: 0.3632576765897997
+Episode 38:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.18996238201840296
+  R_i: 0.00025281034409999845
+  R_total: 0.18996238201840296
+Episode 39:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2690849246928773
+  R_i: 0.0002639048546552658
+  R_total: 0.2690849246928773
+Episode 40:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.12927028285769024
+  R_i: 7.867315784096718e-05
+  R_total: 0.12927028285769024
+Episode 41:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.05515296604015373
+  R_i: 0.00013889114372432233
+  R_total: 0.05515296604015373
+Episode 42:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.04757009806151124
+  R_i: 0.00014807711355388164
+  R_total: 0.04757009806151124
+Episode 43:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.38710106498093666
+  R_i: 0.0005349609255790711
+  R_total: 0.38710106498093666
+Episode 44:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1272142039086039
+  R_i: 0.00012105705216526986
+  R_total: 0.1272142039086039
+Episode 45:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.42237760060705093
+  R_i: 0.00011246076785027981
+  R_total: 0.42237760060705093
+Episode 46:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.16804550580428074
+  R_i: 0.00023979762569069864
+  R_total: 0.16804550580428074
+Episode 47:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.45792623387083986
+  R_i: 0.0001767474040389061
+  R_total: 0.45792623387083986
+Episode 48:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2702358153822828
+  R_i: 0.00014659197069704532
+  R_total: 0.2702358153822828
+Episode 49:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.11968272578094424
+  R_i: 0.00010947311297059059
+  R_total: 0.11968272578094424
+Episode 50:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3539666810601379
+  R_i: 0.00014966517686843873
+  R_total: 0.3539666810601379
+Episode 51:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.17889988842549392
+  R_i: 0.00010155284777283669
+  R_total: 0.17889988842549392
+Episode 52:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.44199837484970245
+  R_i: 0.00015977714210748672
+  R_total: 0.44199837484970245
+Episode 53:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3467270306391756
+  R_i: 0.00018602460622787475
+  R_total: 0.3467270306391756
+Episode 54:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.12518309569640654
+  R_i: 0.0001251561939716339
+  R_total: 0.12518309569640654
+Episode 55:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.2404586273670776
+  R_i: 0.00010844592936336995
+  R_total: 0.2404586273670776
+Episode 56:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.4490141628851307
+  R_i: 0.0001226685382425785
+  R_total: 0.4490141628851307
+Episode 57:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3152757767107387
+  R_i: 0.00019863106310367585
+  R_total: 0.3152757767107387
+Episode 58:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.09889894298759076
+  R_i: 0.00016538687050342561
+  R_total: 0.09889894298759076
+Episode 59:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.25432547275069534
+  R_i: 8.530632592737675e-05
+  R_total: 0.25432547275069534
+Episode 60:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.43660249305776433
+  R_i: 9.900834411382676e-05
+  R_total: 0.43660249305776433
+Episode 61:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.08585687652720328
+  R_i: 0.00027815259993076326
+  R_total: 0.08585687652720328
+Episode 62:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.019660363426733503
+  R_i: 0.00012792575173079968
+  R_total: 0.019660363426733503
+Episode 63:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4045737834770349
+  R_i: 0.00014446710236370563
+  R_total: 0.4045737834770349
+Episode 64:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4011810499347238
+  R_i: 0.00013536576181650162
+  R_total: 0.4011810499347238
+Episode 65:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3789088077179876
+  R_i: 0.0001164404209703207
+  R_total: 0.3789088077179876
+Episode 66:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3636845912081832
+  R_i: 0.0003855135664343834
+  R_total: 0.3636845912081832
+Episode 67:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.06850375390801093
+  R_i: 0.00016457425430417062
+  R_total: 0.06850375390801093
+Episode 68:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.36003097708431336
+  R_i: 0.00011752394028007985
+  R_total: 0.36003097708431336
+Episode 69:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.3489853840704762
+  R_i: 0.00010516158305108547
+  R_total: 0.3489853840704762
+Episode 70:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.37431261614782935
+  R_i: 0.0001706099882721901
+  R_total: 0.37431261614782935
+Episode 71:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3678897169160612
+  R_i: 0.000132766030728817
+  R_total: 0.3678897169160612
+Episode 72:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2317815381673016
+  R_i: 0.00012153432704508305
+  R_total: 0.2317815381673016
+Episode 73:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.38296318874664625
+  R_i: 0.00021589813753962518
+  R_total: 0.38296318874664625
+Episode 74:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3386073025784513
+  R_i: 0.000171691719442606
+  R_total: 0.3386073025784513
+Episode 75:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3430617720243797
+  R_i: 0.00013160355389118194
+  R_total: 0.3430617720243797
+Episode 76:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1940740512708465
+  R_i: 0.00013049311935901643
+  R_total: 0.1940740512708465
+Episode 77:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2721643853778193
+  R_i: 8.133498020470143e-05
+  R_total: 0.2721643853778193
+Episode 78:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.34627672959695843
+  R_i: 0.00022152535617351533
+  R_total: 0.34627672959695843
+Episode 79:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.3356978862453104
+  R_i: 0.00023740224540233612
+  R_total: 0.3356978862453104
+Episode 80:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4319822807790383
+  R_i: 0.0002882173657417297
+  R_total: 0.4319822807790383
+Episode 81:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.13122314891858286
+  R_i: 0.00012303458526730538
+  R_total: 0.13122314891858286
+Episode 82:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.12279498626464858
+  R_i: 0.00022453356534242632
+  R_total: 0.12279498626464858
+Episode 83:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.15587374059283365
+  R_i: 0.00014054962433874608
+  R_total: 0.15587374059283365
+Episode 84:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3169173907477928
+  R_i: 0.00014222729951143264
+  R_total: 0.3169173907477928
+Episode 85:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4402854645678712
+  R_i: 0.0001348964683711529
+  R_total: 0.4402854645678712
+Episode 86:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1683531714874197
+  R_i: 0.00015233618207275868
+  R_total: 0.1683531714874197
+Episode 87:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.07403157511931627
+  R_i: 0.00015067627653479577
+  R_total: 0.07403157511931627
+Episode 88:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3379211164066154
+  R_i: 0.00011820433661341667
+  R_total: 0.3379211164066154
+Episode 89:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.13485182604181806
+  R_i: 0.00025246340781450273
+  R_total: 0.13485182604181806
+Episode 90:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.4298519595651248
+  R_i: 0.0001105472818017006
+  R_total: 0.4298519595651248
+Episode 91:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.0012297778292549443
+  R_i: 0.00010958208702504634
+  R_total: 0.0012297778292549443
+Episode 92:
+  Steps: 400
+  Had Success: True
+  End Success: False
+  R_e: 0.4293025324480769
+  R_i: 0.00020398162305355073
+  R_total: 0.4293025324480769
+Episode 93:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3025389969521525
+  R_i: 0.00013355587609112263
+  R_total: 0.3025389969521525
+Episode 94:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3787970812944801
+  R_i: 0.00011840416118502617
+  R_total: 0.3787970812944801
+Episode 95:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3169105510952439
+  R_i: 0.00016963275149464607
+  R_total: 0.3169105510952439
+Episode 96:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.2914396684804865
+  R_i: 8.594127371907235e-05
+  R_total: 0.2914396684804865
+Episode 97:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1168309698401224
+  R_i: 0.0003887008503079414
+  R_total: 0.1168309698401224
+Episode 98:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.3200455986694144
+  R_i: 0.0001347664836794138
+  R_total: 0.3200455986694144
+Episode 99:
+  Steps: 400
+  Had Success: False
+  End Success: False
+  R_e: 0.1424443892239254
+  R_i: 0.0001528649590909481
+  R_total: 0.1424443892239254
+End success rate: 0.00%
+Had success rate: 17.00%
