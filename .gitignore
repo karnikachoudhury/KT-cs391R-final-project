@@ -1,5 +1,4 @@
 rl_env
-ppo_lift_tensorboard
 test_no_icm_1
 test_no_icm_2
 test_no_icm_3
