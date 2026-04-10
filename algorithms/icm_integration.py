@@ -37,7 +37,7 @@ class ICMIntegration(gym.Wrapper):
         icm: ICM,
         icm_optimizer: torch.optim.Optimizer,
         *,
-        lam: float = 0.01,
+        lam: float = 0.001,
         use_intrinsic_reward: bool = True,
         device: str = "cpu",
         buffer_size: int = 50_000,
@@ -47,21 +47,26 @@ class ICMIntegration(gym.Wrapper):
         icm_steps_per_update: int = 10,
     ):
         super().__init__(env)
+
         self.icm = icm.to(device)
         self.icm_optimizer = icm_optimizer
         self.lambda_icm = float(lam)
-        self.use_intrinsic_reward = use_intrinsic_reward
+        self.use_intrinsic_reward = bool(use_intrinsic_reward)
         self.device = device
-        self.buffer: Deque[Tuple[np.ndarray, np.ndarray, np.ndarray]] = deque(maxlen=buffer_size)
+
+        self.buffer: Deque[Tuple[np.ndarray, np.ndarray, np.ndarray]] = deque(
+            maxlen=buffer_size
+        )
         self.batch_size = int(icm_batch_size)
         self.grad_clip_norm = float(grad_clip_norm)
+
         self.previous_observation: Optional[np.ndarray] = None
 
         self._step_counter = 0
         self._icm_train_every = int(icm_train_every)
         self._icm_steps_per_update = int(icm_steps_per_update)
 
-        # Running stats for intrinsic reward normalization
+        # Running stats for intrinsic normalization
         self._r_int_running_mean = 0.0
         self._r_int_running_std = 1.0
         self._r_int_alpha = 0.01
@@ -69,7 +74,7 @@ class ICMIntegration(gym.Wrapper):
         self.success = 0.0
 
     # ------------------------------------------------------------------
-    # Success detection — unwrap all the way to the raw robosuite env
+    # Success detection
     # ------------------------------------------------------------------
 
     def _query_success(self) -> float:
@@ -94,40 +99,45 @@ class ICMIntegration(gym.Wrapper):
 
     def _normalize_r_int(self, r_int: float) -> float:
         self._r_int_running_mean = (
-            (1 - self._r_int_alpha) * self._r_int_running_mean
+            (1.0 - self._r_int_alpha) * self._r_int_running_mean
             + self._r_int_alpha * r_int
         )
         self._r_int_running_std = (
-            (1 - self._r_int_alpha) * self._r_int_running_std
+            (1.0 - self._r_int_alpha) * self._r_int_running_std
             + self._r_int_alpha * abs(r_int - self._r_int_running_mean)
         )
         return r_int / (self._r_int_running_std + 1e-8)
 
-    def _train_icm_inline(self) -> None:
-        self.icm.train()
-        for _ in range(self._icm_steps_per_update):
-            batch = self._sample_batch()
-            if batch is None:
-                break
-            self.icm_optimizer.zero_grad(set_to_none=True)
-            out = self.icm.forward(batch.obs, batch.next_obs, batch.action)
-            out.loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.icm.parameters(), self.grad_clip_norm)
-            self.icm_optimizer.step()
-        self.icm.eval()
-
     def _sample_batch(self) -> Optional[TransitionBatch]:
         if len(self.buffer) < self.batch_size:
             return None
-        index = np.random.randint(0, len(self.buffer), size=self.batch_size)
-        obs_b = np.stack([self.buffer[i][0] for i in index])
-        act_b = np.stack([self.buffer[i][1] for i in index])
-        nxt_b = np.stack([self.buffer[i][2] for i in index])
+
+        idx = np.random.randint(0, len(self.buffer), size=self.batch_size)
+        obs_b = np.stack([self.buffer[i][0] for i in idx])
+        act_b = np.stack([self.buffer[i][1] for i in idx])
+        nxt_b = np.stack([self.buffer[i][2] for i in idx])
+
         return TransitionBatch(
             obs=torch.as_tensor(obs_b, dtype=torch.float32, device=self.device),
             action=torch.as_tensor(act_b, dtype=torch.float32, device=self.device),
             next_obs=torch.as_tensor(nxt_b, dtype=torch.float32, device=self.device),
         )
+
+    def _train_icm_inline(self) -> None:
+        self.icm.train()
+
+        for _ in range(self._icm_steps_per_update):
+            batch = self._sample_batch()
+            if batch is None:
+                break
+
+            self.icm_optimizer.zero_grad(set_to_none=True)
+            out = self.icm.forward(batch.obs, batch.next_obs, batch.action)
+            out.loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.icm.parameters(), self.grad_clip_norm)
+            self.icm_optimizer.step()
+
+        self.icm.eval()
 
     # ------------------------------------------------------------------
     # Gym interface
@@ -144,13 +154,35 @@ class ICMIntegration(gym.Wrapper):
         action_np = np.asarray(action, dtype=np.float32)
         next_observation, r_ext, terminated, truncated, info = self.env.step(action_np)
         next_observation = next_observation.astype(np.float32)
+        info = dict(info)
 
+        # Baseline path: same wrapper, but no intrinsic reward / ICM training
+        if (not self.use_intrinsic_reward) or (self.lambda_icm == 0.0):
+            current_success = self._query_success()
+            self.success = max(self.success, current_success)
+
+            info["reward_extrinsic"] = float(r_ext)
+            info["reward_intrinsic"] = 0.0
+            info["reward_total"] = float(r_ext)
+            info["reward_intrinsic_raw"] = 0.0
+            info["reward_intrinsic_normalized"] = 0.0
+            info["icm_buffer_size"] = len(self.buffer)
+
+            info["success"] = float(current_success)
+            info["episode_success_so_far"] = float(self.success)
+
+            if terminated or truncated:
+                info["episode_success"] = float(self.success)
+
+            self.previous_observation = next_observation
+            return next_observation, float(r_ext), terminated, truncated, info
+
+        # ICM path
         self.buffer.append((self.previous_observation, action_np, next_observation))
         self._step_counter += 1
 
         if (
-            self.use_intrinsic_reward
-            and self._step_counter % self._icm_train_every == 0
+            self._step_counter % self._icm_train_every == 0
             and len(self.buffer) >= self.batch_size
         ):
             self._train_icm_inline()
@@ -158,21 +190,25 @@ class ICMIntegration(gym.Wrapper):
         r_int_raw = self._compute_intrinsic_single(
             self.previous_observation, action_np, next_observation
         )
-        r_int = self._normalize_r_int(r_int_raw)
-        r_total = r_ext + self.lambda_icm * r_int if self.use_intrinsic_reward else r_ext
-
-        info = dict(info)
-        info["reward_extrinsic"] = float(r_ext)
-        info["reward_intrinsic"] = float(self.lambda_icm * r_int)
-        info["reward_total"] = float(r_total)
-        info["icm_buffer_size"] = len(self.buffer)
+        r_int_norm = self._normalize_r_int(r_int_raw)
+        r_intrinsic_scaled = self.lambda_icm * float(r_int_norm)
+        r_total = float(r_ext) + r_intrinsic_scaled
 
         current_success = self._query_success()
         self.success = max(self.success, current_success)
+
+        info["reward_extrinsic"] = float(r_ext)
+        info["reward_intrinsic"] = float(r_intrinsic_scaled)
+        info["reward_total"] = float(r_total)
+        info["reward_intrinsic_raw"] = float(r_int_raw)
+        info["reward_intrinsic_normalized"] = float(r_int_norm)
+        info["icm_buffer_size"] = len(self.buffer)
+
         info["success"] = float(current_success)
         info["episode_success_so_far"] = float(self.success)
+
         if terminated or truncated:
             info["episode_success"] = float(self.success)
 
         self.previous_observation = next_observation
-        return next_observation, r_total, terminated, truncated, info
+        return next_observation, float(r_total), terminated, truncated, info
