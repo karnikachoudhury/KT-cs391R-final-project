@@ -25,9 +25,11 @@ def make_icm_env(
     device: str,
     shared_icm: ICM,
     shared_icm_optimizer: torch.optim.Optimizer,
-    icm_train_every: int = 500,
-    icm_steps_per_update: int = 2,
+    icm_train_every: int = 50,
+    icm_steps_per_update: int = 10,
     icm_batch_size: int = 256,
+    train_icm: bool = True,
+    r_int_clip: float = 0.5,
 ):
     def _make():
         base_env = make_env(horizon=horizon, dense_reward=dense_reward)
@@ -42,6 +44,8 @@ def make_icm_env(
             icm_batch_size=icm_batch_size,
             icm_train_every=icm_train_every,
             icm_steps_per_update=icm_steps_per_update,
+            train_icm=train_icm,
+            r_int_clip=r_int_clip,
         )
 
     return _make
@@ -174,9 +178,13 @@ def train_icm(
     output_dir: str = None,
     eval_freq: int = 20_000,
     n_eval_episodes: int = 10,
-    icm_train_every: int = 500,
-    icm_steps_per_update: int = 2,
+    # ICM update frequency: 50 steps between updates, 10 gradient steps each.
+    # With n_envs=2 and n_steps=2048, one PPO rollout = ~4096 env steps, so the
+    # ICM gets ~800 gradient steps per rollout — enough to stay in sync with policy.
+    icm_train_every: int = 50,
+    icm_steps_per_update: int = 10,
     icm_batch_size: int = 256,
+    r_int_clip: float = 0.5,
 ):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -186,7 +194,7 @@ def train_icm(
 
     if output_dir is None:
         output_dir = os.path.join(
-            "outputs_kc_icm",
+            "outputs_kc_icm_pickplace",
             f"{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}",
         )
     os.makedirs(output_dir, exist_ok=True)
@@ -210,6 +218,7 @@ def train_icm(
 
     shared_icm_optimizer = torch.optim.Adam(shared_icm.parameters(), lr=icm_lr)
 
+    # Training envs: train_icm=True (default) so ICM weights are updated here.
     env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -221,11 +230,19 @@ def train_icm(
         icm_train_every=icm_train_every,
         icm_steps_per_update=icm_steps_per_update,
         icm_batch_size=icm_batch_size,
+        train_icm=True,
+        r_int_clip=r_int_clip,
     )
 
     vec_env = make_vec_env(env_factory, n_envs=n_envs, seed=seed)
-    vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=False, clip_obs=10.0)
+    # norm_reward=True: VecNormalize normalizes the PPO reward signal, which matters
+    # because the total reward (r_ext + r_int) has a shifting scale during training.
+    # Previously this was False, leaving the policy to deal with raw unbounded rewards.
+    vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
+    # Eval env: train_icm=False so evaluation runs never mutate the shared ICM weights
+    # or optimizer state. Without this, eval episodes would silently continue training
+    # the ICM, contaminating both the metrics and the learned reward signal.
     eval_env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -237,6 +254,8 @@ def train_icm(
         icm_train_every=icm_train_every,
         icm_steps_per_update=icm_steps_per_update,
         icm_batch_size=icm_batch_size,
+        train_icm=False,   # <-- eval env never trains the ICM
+        r_int_clip=r_int_clip,
     )
 
     eval_vec_env = make_vec_env(eval_env_factory, n_envs=1, seed=seed + 100)
@@ -294,17 +313,18 @@ def train_icm(
 
 if __name__ == "__main__":
     train_icm(
-        env_horizon=1000,
+        env_horizon=500,
         env_dense_reward=True,
         icm_beta=0.2,
         icm_lr=3e-4,
-        env_lambda=1e-4,
+        env_lambda=0.005,
         use_icm=True,
         total_timesteps=1_000_000,
-        n_envs=2,
+        n_envs=4,
         eval_freq=20_000,
         n_eval_episodes=10,
-        icm_train_every=500,
-        icm_steps_per_update=2,
+        icm_train_every=50,
+        icm_steps_per_update=10,
         icm_batch_size=256,
+        r_int_clip=0.5,
     )
