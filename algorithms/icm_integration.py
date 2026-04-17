@@ -7,6 +7,7 @@ from icm import ICM
 import numpy as np
 import gymnasium as gym
 import torch
+import math
 
 
 @dataclass
@@ -22,6 +23,18 @@ def unwrap_fully(env):
         env = env.env
     return env
 
+def get_decay_func(decay_type, init_lambda, half_life=200_000):
+    expfunc = lambda step: init_lambda * math.pow(2, - step / half_life)
+    linfunc = lambda step: - step / 750_000 + 1
+    sinfunc = lambda step: .005 * math.sin(step / 10_000) + .005
+    if decay_type == 'linear':
+        return lambda step: init_lambda * linfunc(step)
+    elif decay_type == 'exp':
+        return expfunc
+    elif decay_type == 'sin':
+        return lambda step: linfunc(step) * sinfunc(step)
+    else:
+        return None
 
 class ICMIntegration(gym.Wrapper):
     """
@@ -55,6 +68,9 @@ class ICMIntegration(gym.Wrapper):
         icm_steps_per_update: int = 10,
         train_icm: bool = True,
         r_int_clip: float = 0.5,
+        delay: int = 0,
+        decay_type = None,
+        n_envs = 4,
     ):
         super().__init__(env)
 
@@ -75,6 +91,7 @@ class ICMIntegration(gym.Wrapper):
         self.previous_observation: Optional[np.ndarray] = None
 
         self._step_counter = 0
+        self.delay = int(delay)
         self._icm_train_every = int(icm_train_every)
         self._icm_steps_per_update = int(icm_steps_per_update)
 
@@ -86,6 +103,10 @@ class ICMIntegration(gym.Wrapper):
         self._r_int_M2: float = 0.0  # running sum of squared deviations
 
         self.success = 0.0
+        self.decay = get_decay_func(decay_type, self.lambda_icm)
+        self.n_envs = 4
+        
+
 
     # ------------------------------------------------------------------
     # Success detection
@@ -187,7 +208,6 @@ class ICMIntegration(gym.Wrapper):
             info["reward_intrinsic_raw"] = 0.0
             info["reward_intrinsic_normalized"] = 0.0
             info["icm_buffer_size"] = len(self.buffer)
-
             info["success"] = float(current_success)
             info["episode_success_so_far"] = float(self.success)
 
@@ -215,24 +235,37 @@ class ICMIntegration(gym.Wrapper):
             self.previous_observation, action_np, next_observation
         )
         r_int_norm = self._normalize_r_int(r_int_raw)
+        ext_scale = 1.0
+        if self.decay is not None:
+            # set lambda according to the decay function
+            # multiply by n_envs to account for total steps, not just this one
+            self.lambda_icm = self.decay(self._step_counter * self.n_envs)
+            # TODO talk to karnika abt this, think it's a good idea but could
+            # use a second opinion. Want to keep magnitude consistent
+            ext_scale -= self.lambda_icm 
         r_intrinsic_scaled = self.lambda_icm * float(r_int_norm)
 
         # Clip the intrinsic contribution so it cannot dominate r_ext.
         # This is especially important early in training before the Welford
         # estimator has seen enough samples to produce a stable std estimate.
         r_intrinsic_scaled = float(np.clip(r_intrinsic_scaled, -self.r_int_clip, self.r_int_clip))
-
-        r_total = float(r_ext) + r_intrinsic_scaled
+        if self._step_counter >= self.delay:
+            r_total = ext_scale * float(r_ext) + r_intrinsic_scaled
+        else:
+            r_total = float(r_ext)
 
         current_success = self._query_success()
         self.success = max(self.success, current_success)
 
+        if self._step_counter % 500 == 0:
+            print(f"Step {self._step_counter}: \n\tlambda: {self.lambda_icm:.6f}")
         info["reward_extrinsic"] = float(r_ext)
         info["reward_intrinsic"] = float(r_intrinsic_scaled)
         info["reward_total"] = float(r_total)
         info["reward_intrinsic_raw"] = float(r_int_raw)
         info["reward_intrinsic_normalized"] = float(r_int_norm)
         info["icm_buffer_size"] = len(self.buffer)
+        info["lambda"] = self.lambda_icm
 
         info["success"] = float(current_success)
         info["episode_success_so_far"] = float(self.success)

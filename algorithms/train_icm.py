@@ -7,10 +7,11 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecNormalize, sync_envs_normalization
 from stable_baselines3.common.callbacks import BaseCallback
-
+import gc
 from make_env import make_env
 from icm import ICM
 from icm_integration import ICMIntegration
+import faulthandler
 
 
 # ---------------------------------------------------------------------------
@@ -30,6 +31,9 @@ def make_icm_env(
     icm_batch_size: int = 256,
     train_icm: bool = True,
     r_int_clip: float = 0.5,
+    delay: int = 0,
+    decay: str = None,
+    n_envs: int = 4,
 ):
     def _make():
         base_env = make_env(horizon=horizon, dense_reward=dense_reward)
@@ -46,6 +50,9 @@ def make_icm_env(
             icm_steps_per_update=icm_steps_per_update,
             train_icm=train_icm,
             r_int_clip=r_int_clip,
+            delay=delay,
+            decay_type=decay,
+            n_envs=n_envs,
         )
 
     return _make
@@ -60,7 +67,7 @@ class EvalCallback(BaseCallback):
         self,
         eval_env,
         eval_freq: int = 20_000,
-        n_eval_episodes: int = 10,
+        n_eval_episodes: int = 20,
         save_path: str = "./logs/best_model",
         verbose: int = 1,
     ):
@@ -73,6 +80,7 @@ class EvalCallback(BaseCallback):
         self.last_eval_timestep = 0
 
     @staticmethod
+    # have used multiple keys for success, account for them
     def _extract_success_from_info(info) -> float:
         if info is None:
             return 0.0
@@ -90,13 +98,15 @@ class EvalCallback(BaseCallback):
         if self.num_timesteps - self.last_eval_timestep < self.eval_freq:
             return True
         self.last_eval_timestep = self.num_timesteps
-
+        print(f"\neval: \n\tnum_timesteps = {self.num_timesteps}")
+        lambda_icm = -1.0
         sync_envs_normalization(self.training_env, self.eval_env)
 
         successes = 0
         episode_rewards_total = []
         episode_rewards_ext = []
         episode_rewards_int = []
+        episode_rewards_int_norm = []
 
         for _ in range(self.n_eval_episodes):
             obs = self.eval_env.reset()
@@ -105,6 +115,7 @@ class EvalCallback(BaseCallback):
             ep_reward_total = 0.0
             ep_reward_ext = 0.0
             ep_reward_int = 0.0
+            ep_reward_int_norm = 0.0
             ep_success = 0.0
 
             while not done:
@@ -118,19 +129,23 @@ class EvalCallback(BaseCallback):
                 ep_reward_total += reward
                 ep_reward_ext += float(info.get("reward_extrinsic", reward))
                 ep_reward_int += float(info.get("reward_intrinsic", 0.0))
-
+                ep_reward_int_norm += float(info.get("reward_intrinsic_normalized", 0.0))
+                lambda_icm = float(info.get("lambda", -1.0))
                 step_success = self._extract_success_from_info(info)
                 ep_success = max(ep_success, step_success)
-
+            print(f"eval: \n\tlast lambda = {lambda_icm:.4f}")
             successes += int(ep_success > 0.5)
             episode_rewards_total.append(ep_reward_total)
             episode_rewards_ext.append(ep_reward_ext)
             episode_rewards_int.append(ep_reward_int)
+            episode_rewards_int_norm.append(ep_reward_int_norm)
+
 
         success_rate = successes / float(self.n_eval_episodes)
         mean_reward_total = float(np.mean(episode_rewards_total)) if episode_rewards_total else 0.0
         mean_reward_ext = float(np.mean(episode_rewards_ext)) if episode_rewards_ext else 0.0
         mean_reward_int = float(np.mean(episode_rewards_int)) if episode_rewards_int else 0.0
+        mean_reward_int_norm = float(np.mean(episode_rewards_int_norm)) if episode_rewards_int_norm else 0.0
 
         if self.verbose:
             print(
@@ -146,6 +161,9 @@ class EvalCallback(BaseCallback):
         self.logger.record("eval/mean_reward_total", mean_reward_total)
         self.logger.record("eval/mean_reward_extrinsic", mean_reward_ext)
         self.logger.record("eval/mean_reward_intrinsic", mean_reward_int)
+        self.logger.record("eval/mean_reward_intrinsic_normalized", mean_reward_int_norm)
+        if info.get("lambda") is not None:
+            self.logger.record("eval/lambda", info.get("lambda", 0.0))
         self.logger.dump(self.num_timesteps)
 
         if success_rate > self.best_success:
@@ -185,6 +203,9 @@ def train_icm(
     icm_steps_per_update: int = 10,
     icm_batch_size: int = 256,
     r_int_clip: float = 0.5,
+    delay: int = 0,
+    entropy: float = 0.0,
+    decay: str = None,
 ):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -194,8 +215,8 @@ def train_icm(
 
     if output_dir is None:
         output_dir = os.path.join(
-            "outputs_kc_icm_pickplace",
-            f"{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}",
+            "outputs_thom_door",
+            f"{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}{"_delay_" + str(delay) if delay else ""}{"_entropy_" + str(entropy) if entropy > 0.0 else ""}{("_decay_" + decay if decay else "")}",
         )
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output dir: {output_dir}")
@@ -232,6 +253,9 @@ def train_icm(
         icm_batch_size=icm_batch_size,
         train_icm=True,
         r_int_clip=r_int_clip,
+        delay = delay // n_envs,
+        decay = decay,
+        n_envs = n_envs,
     )
 
     vec_env = make_vec_env(env_factory, n_envs=n_envs, seed=seed)
@@ -256,8 +280,12 @@ def train_icm(
         icm_batch_size=icm_batch_size,
         train_icm=False,   # <-- eval env never trains the ICM
         r_int_clip=r_int_clip,
+        delay = delay // n_envs,
+        decay = decay,
+        n_envs = n_envs
     )
-
+    # TODO: decay/delay math may be wrong bc of step assumptions - eval env isn'tt
+    # running as often so may be ending decay differently
     eval_vec_env = make_vec_env(eval_env_factory, n_envs=1, seed=seed + 100)
     eval_vec_env = VecNormalize(
         eval_vec_env, norm_obs=True, norm_reward=False, clip_obs=10.0
@@ -278,7 +306,7 @@ def train_icm(
         n_epochs=10,
         learning_rate=3e-4,
         clip_range=0.2,
-        ent_coef=0.0,
+        ent_coef=entropy,
         tensorboard_log=output_dir,
         policy_kwargs=policy_kwargs,
         seed=seed,
@@ -312,19 +340,25 @@ def train_icm(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    faulthandler.enable()
+    print("starting")
+# super large lambda, 1000 delay
     train_icm(
-        env_horizon=500,
+        env_horizon=1000,
         env_dense_reward=True,
         icm_beta=0.2,
         icm_lr=3e-4,
-        env_lambda=0.005,
+        env_lambda=0.05,
         use_icm=True,
-        total_timesteps=1_000_000,
+        total_timesteps=750_000,
         n_envs=4,
         eval_freq=20_000,
-        n_eval_episodes=10,
+        n_eval_episodes=20,
         icm_train_every=50,
-        icm_steps_per_update=10,
+        icm_steps_per_update=40,
         icm_batch_size=256,
         r_int_clip=0.5,
+        delay=1000,
+        entropy=0.0,
+        #decay = 'exp'
     )
