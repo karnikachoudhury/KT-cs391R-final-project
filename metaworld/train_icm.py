@@ -1,17 +1,17 @@
 import os
+import random
 import numpy as np
 import torch
-import random
+import faulthandler
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecNormalize, sync_envs_normalization
 from stable_baselines3.common.callbacks import BaseCallback
-import gc
-from make_env import make_env
+
+from make_env_meta import make_env
 from icm import ICM
-from icm_integration import ICMIntegration
-import faulthandler
+from icm_integration_meta import ICMIntegration
 
 
 # ---------------------------------------------------------------------------
@@ -26,17 +26,23 @@ def make_icm_env(
     device: str,
     shared_icm: ICM,
     shared_icm_optimizer: torch.optim.Optimizer,
-    icm_train_every: int = 50,
-    icm_steps_per_update: int = 10,
+    env_name: str = "drawer-open-v3",
+    seed: int = 0,
+    icm_train_every: int = 100,
+    icm_steps_per_update: int = 5,
     icm_batch_size: int = 256,
     train_icm: bool = True,
-    r_int_clip: float = 0.5,
+    r_int_clip: float = 0.05,
     delay: int = 0,
     decay: str = None,
     n_envs: int = 4,
 ):
     def _make():
-        base_env = make_env(horizon=horizon, dense_reward=dense_reward)
+        base_env = make_env(
+            horizon=horizon,
+            seed=seed,
+            env_name=env_name,
+        )
 
         return ICMIntegration(
             env=base_env,
@@ -80,7 +86,6 @@ class EvalCallback(BaseCallback):
         self.last_eval_timestep = 0
 
     @staticmethod
-    # have used multiple keys for success, account for them
     def _extract_success_from_info(info) -> float:
         if info is None:
             return 0.0
@@ -97,9 +102,10 @@ class EvalCallback(BaseCallback):
     def _on_step(self) -> bool:
         if self.num_timesteps - self.last_eval_timestep < self.eval_freq:
             return True
+
         self.last_eval_timestep = self.num_timesteps
-        print(f"\neval: \n\tnum_timesteps = {self.num_timesteps}")
-        lambda_icm = -1.0
+        print(f"\nEval @ timesteps = {self.num_timesteps}")
+
         sync_envs_normalization(self.training_env, self.eval_env)
 
         successes = 0
@@ -107,6 +113,7 @@ class EvalCallback(BaseCallback):
         episode_rewards_ext = []
         episode_rewards_int = []
         episode_rewards_int_norm = []
+        lambda_icm = -1.0
 
         for _ in range(self.n_eval_episodes):
             obs = self.eval_env.reset()
@@ -133,13 +140,12 @@ class EvalCallback(BaseCallback):
                 lambda_icm = float(info.get("lambda", -1.0))
                 step_success = self._extract_success_from_info(info)
                 ep_success = max(ep_success, step_success)
-            print(f"eval: \n\tlast lambda = {lambda_icm:.4f}")
+
             successes += int(ep_success > 0.5)
             episode_rewards_total.append(ep_reward_total)
             episode_rewards_ext.append(ep_reward_ext)
             episode_rewards_int.append(ep_reward_int)
             episode_rewards_int_norm.append(ep_reward_int_norm)
-
 
         success_rate = successes / float(self.n_eval_episodes)
         mean_reward_total = float(np.mean(episode_rewards_total)) if episode_rewards_total else 0.0
@@ -162,8 +168,8 @@ class EvalCallback(BaseCallback):
         self.logger.record("eval/mean_reward_extrinsic", mean_reward_ext)
         self.logger.record("eval/mean_reward_intrinsic", mean_reward_int)
         self.logger.record("eval/mean_reward_intrinsic_normalized", mean_reward_int_norm)
-        if info.get("lambda") is not None:
-            self.logger.record("eval/lambda", info.get("lambda", 0.0))
+        if lambda_icm >= 0.0:
+            self.logger.record("eval/lambda", lambda_icm)
         self.logger.dump(self.num_timesteps)
 
         if success_rate > self.best_success:
@@ -182,27 +188,25 @@ class EvalCallback(BaseCallback):
 # ---------------------------------------------------------------------------
 
 def train_icm(
-    env_horizon: int = 1000,
+    env_name: str = "drawer-open-v3",
+    env_horizon: int = 150,
     env_dense_reward: bool = True,
     icm_beta: float = 0.2,
     icm_lr: float = 3e-4,
-    env_lambda: float = 1e-4,
+    env_lambda: float = 1e-3,
     use_icm: bool = True,
     total_timesteps: int = 1_000_000,
-    n_envs: int = 2,
+    n_envs: int = 8,
     feature_dim: int = 64,
     device: str = "cpu",
     seed: int = 0,
     output_dir: str = None,
     eval_freq: int = 20_000,
-    n_eval_episodes: int = 10,
-    # ICM update frequency: 50 steps between updates, 10 gradient steps each.
-    # With n_envs=2 and n_steps=2048, one PPO rollout = ~4096 env steps, so the
-    # ICM gets ~800 gradient steps per rollout — enough to stay in sync with policy.
-    icm_train_every: int = 50,
-    icm_steps_per_update: int = 10,
+    n_eval_episodes: int = 20,
+    icm_train_every: int = 100,
+    icm_steps_per_update: int = 5,
     icm_batch_size: int = 256,
-    r_int_clip: float = 0.5,
+    r_int_clip: float = 0.05,
     delay: int = 0,
     entropy: float = 0.0,
     decay: str = None,
@@ -215,21 +219,30 @@ def train_icm(
 
     if output_dir is None:
         output_dir = os.path.join(
-            "outputs_kc_icm_beat_entropy_try",
-            f"{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}{"_delay_" + str(delay) if delay else ""}{"_entropy_" + str(entropy) if entropy > 0.0 else ""}{("_decay_" + decay if decay else "")}",
+            "outputs_metaworld_icm_vs_entropy",
+            (
+                f"{env_name}_{run_name}"
+                f"_dense_{env_dense_reward}"
+                f"_lam_{env_lambda}"
+                f"_horizon_{env_horizon}"
+                f"{'_delay_' + str(delay) if delay else ''}"
+                f"{'_entropy_' + str(entropy) if entropy > 0.0 else ''}"
+                f"{'_decay_' + decay if decay else ''}"
+            ),
         )
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output dir: {output_dir}")
 
-    probe_env = make_env(horizon=env_horizon, dense_reward=env_dense_reward)
+    probe_env = make_env(
+        horizon=env_horizon,
+        seed=seed,
+        env_name=env_name,
+    )
     obs_dim = probe_env.observation_space.shape[0]
     action_dim = probe_env.action_space.shape[0]
     probe_env.close()
     print(f"obs_dim={obs_dim}, action_dim={action_dim}")
 
-    # -----------------------------------------------------------------------
-    # Shared ICM + shared optimizer across all envs
-    # -----------------------------------------------------------------------
     shared_icm = ICM(
         obs_dim=obs_dim,
         action_dim=action_dim,
@@ -239,7 +252,6 @@ def train_icm(
 
     shared_icm_optimizer = torch.optim.Adam(shared_icm.parameters(), lr=icm_lr)
 
-    # Training envs: train_icm=True (default) so ICM weights are updated here.
     env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -248,25 +260,21 @@ def train_icm(
         device=device,
         shared_icm=shared_icm,
         shared_icm_optimizer=shared_icm_optimizer,
+        env_name=env_name,
+        seed=seed,
         icm_train_every=icm_train_every,
         icm_steps_per_update=icm_steps_per_update,
         icm_batch_size=icm_batch_size,
         train_icm=True,
         r_int_clip=r_int_clip,
-        delay = delay // n_envs,
-        decay = decay,
-        n_envs = n_envs,
+        delay=delay // max(n_envs, 1),
+        decay=decay,
+        n_envs=n_envs,
     )
 
     vec_env = make_vec_env(env_factory, n_envs=n_envs, seed=seed)
-    # norm_reward=True: VecNormalize normalizes the PPO reward signal, which matters
-    # because the total reward (r_ext + r_int) has a shifting scale during training.
-    # Previously this was False, leaving the policy to deal with raw unbounded rewards.
     vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
-    # Eval env: train_icm=False so evaluation runs never mutate the shared ICM weights
-    # or optimizer state. Without this, eval episodes would silently continue training
-    # the ICM, contaminating both the metrics and the learned reward signal.
     eval_env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -275,18 +283,19 @@ def train_icm(
         device=device,
         shared_icm=shared_icm,
         shared_icm_optimizer=shared_icm_optimizer,
+        env_name=env_name,
+        seed=seed + 1000,
         icm_train_every=icm_train_every,
         icm_steps_per_update=icm_steps_per_update,
         icm_batch_size=icm_batch_size,
-        train_icm=False,   # <-- eval env never trains the ICM
+        train_icm=False,
         r_int_clip=r_int_clip,
-        delay = delay // n_envs,
-        decay = decay,
-        n_envs = n_envs
+        delay=delay // max(n_envs, 1),
+        decay=decay,
+        n_envs=n_envs,
     )
-    # TODO: decay/delay math may be wrong bc of step assumptions - eval env isn'tt
-    # running as often so may be ending decay differently
-    eval_vec_env = make_vec_env(eval_env_factory, n_envs=1, seed=seed + 100)
+
+    eval_vec_env = make_vec_env(eval_env_factory, n_envs=1, seed=seed + 1000)
     eval_vec_env = VecNormalize(
         eval_vec_env, norm_obs=True, norm_reward=False, clip_obs=10.0
     )
@@ -342,23 +351,40 @@ def train_icm(
 if __name__ == "__main__":
     faulthandler.enable()
     print("starting")
-# super large lambda, 1000 delay
+
+    # PPO + ICM run
     train_icm(
-        env_horizon=500,
+        env_name="drawer-open-v3",
+        env_horizon=150,
         env_dense_reward=False,
         icm_beta=0.2,
         icm_lr=3e-4,
-        env_lambda=0.005,
+        env_lambda=0.05,
         use_icm=True,
         total_timesteps=1_000_000,
-        n_envs=4,
+        n_envs=8,
         eval_freq=20_000,
         n_eval_episodes=20,
         icm_train_every=100,
-        icm_steps_per_update=10,
+        icm_steps_per_update=5,
         icm_batch_size=256,
-        r_int_clip=0.1,
+        r_int_clip=0.05,
         delay=0,
         entropy=0.0,
-        #decay = 'exp'
+        #decay="exp",
     )
+
+    # For PPO + entropy baseline, change the call above to:
+    
+    # train_icm(
+    #     env_name="drawer-open-v3",
+    #     env_horizon=150,
+    #     env_dense_reward=False,
+    #     env_lambda=0.0,
+    #     use_icm=False,
+    #     total_timesteps=1_000_000,
+    #     n_envs=8,
+    #     eval_freq=20_000,
+    #     n_eval_episodes=20,
+    #     entropy=0.001,
+    # )
