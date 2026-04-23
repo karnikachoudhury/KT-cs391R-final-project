@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecNormalize, sync_envs_normalization
 from stable_baselines3.common.callbacks import BaseCallback
-#import gc
+import gc
 from make_env import make_env
 from icm import ICM
 from icm_integration import ICMIntegration, unwrap_fully
@@ -111,7 +111,8 @@ class EvalCallback(BaseCallback):
         return 0.0
 
     def _save_vid(self, frames, ep_num, success, r_i, r_e):
-        vid_dir = os.path.join(self.output_dir, "renders", f"eval_{self.eval_num:02d}")
+        print("Saving video")
+        vid_dir = os.path.join(self.output_dir, "renders", f"eval_{self.num_timesteps:07d}")
         os.makedirs(vid_dir, exist_ok=True)
         vid_path = os.path.join(vid_dir, f"ep_{ep_num:02d}_success_{success}_ri_{r_i:.4f}_re_{r_e:.4f}.mp4")
         writer = imageio.get_writer(vid_path, fps=30)
@@ -126,10 +127,12 @@ class EvalCallback(BaseCallback):
         print(f"EVAL at {self.num_timesteps}")
         self.last_eval_timestep = self.num_timesteps
         self.eval_num += 1
-        print(f"\neval: {self.eval_num}\n\tnum_timesteps = {self.num_timesteps}")
         lambda_icm = -1.0
         sync_envs_normalization(self.training_env, self.eval_env)
         should_render = self.render and (self.num_timesteps - self.last_render_timestep) >= self.render_every
+        print(f"\neval: {self.eval_num}\n\tnum_timesteps = {self.num_timesteps}\n\tshould_render = {should_render}")
+        print(f"selfrender = {self.render}, last r ts {self.last_render_timestep}, num ts = {self.num_timesteps}, render every {self.render_every}")
+        
         if should_render:
             self.last_render_timestep = self.num_timesteps
         successes = []
@@ -137,11 +140,12 @@ class EvalCallback(BaseCallback):
         episode_rewards_ext = []
         episode_rewards_int = []
         episode_rewards_int_norm = []
-        all_frames = []
 
         for ep_num in range(self.n_eval_episodes):
             obs = self.eval_env.reset()
             done = False
+            should_render_ep = should_render and (ep_num % 4 == 0)
+            print(f"Eval ep {ep_num + 1}, render = {should_render_ep}")
 
             ep_reward_total = 0.0
             ep_reward_ext = 0.0
@@ -165,26 +169,24 @@ class EvalCallback(BaseCallback):
                 lambda_icm = float(info.get("lambda", -1.0))
                 step_success = self._extract_success_from_info(info)
                 ep_success = max(ep_success, step_success)
-                if should_render:
+                if should_render_ep:
                     base_env = unwrap_fully(self.eval_env.envs[0])
                     # env.render returned none so using sim.render
-                    frame = base_env.sim.render(camera_name="frontview", width=512, height=512)
+                    frame = base_env.sim.render(camera_name="frontview", width=256, height=256)
                     if frame is not None:
                         ep_frames.append(frame[::-1])     
                     else:
                         print("ISSUE: eval render returned None")
-            print(f"eval: \n\tlast lambda = {lambda_icm:.4f}")
             successes.append(1 if ep_success > 0.5 else 0)
             episode_rewards_total.append(ep_reward_total)
             episode_rewards_ext.append(ep_reward_ext)
             episode_rewards_int.append(ep_reward_int)
             episode_rewards_int_norm.append(ep_reward_int_norm)
-            all_frames.append(ep_frames)
         
-        if should_render and all_frames:
-            # TODO: render every few episodes, all successes, plus failures if 
-            # success rate is high (failure cases)
-            self._save_vid(ep_frames, ep_num, ep_success > 0.5, ep_reward_int, ep_reward_ext)
+            if should_render_ep:
+                # TODO: render every few episodes, all successes, plus failures if 
+                # success rate is high (failure cases)
+                self._save_vid(ep_frames, ep_num, ep_success > 0.5, ep_reward_int, ep_reward_ext)
 
         success_rate = sum(successes) / float(self.n_eval_episodes)
         mean_reward_total = float(np.mean(episode_rewards_total)) if episode_rewards_total else 0.0
@@ -218,7 +220,7 @@ class EvalCallback(BaseCallback):
             self.training_env.save(os.path.join(self.save_path, "vecnormalize.pkl"))
             if self.verbose:
                 print(f"[Eval] Saved new best model (success={success_rate:.3f})")
-
+        gc.collect()
         return True
 
 
@@ -252,7 +254,8 @@ def train_icm(
     entropy: float = 0.0,
     decay: str = None,
     render: bool = False,
-    render_every: int = 100_000
+    render_every: int = 100_000,
+    name_inc: int = None
 ):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -263,7 +266,7 @@ def train_icm(
     if output_dir is None:
         output_dir = os.path.join(
             "outputs_vid_testing",
-            f"{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}{"_delay_" + str(delay) if delay else ""}{"_entropy_" + str(entropy) if entropy > 0.0 else ""}{("_decay_" + decay if decay else "")}",
+            f'{run_name}_dense_{env_dense_reward}_lam_{env_lambda}_horizon_{env_horizon}{"_delay_" + str(delay) if delay else ""}{"_entropy_" + str(entropy) if entropy > 0.0 else ""}{("_decay_" + decay if decay else "")}{"_" + str(name_inc) if name_inc else ""}',
         )
     os.makedirs(output_dir, exist_ok=True)
     print(f"Output dir: {output_dir}")
@@ -430,4 +433,5 @@ if __name__ == "__main__":
         render=True,
         # entropy=0.005,
         # #decay = 'exp'
+        # name_inc=1 # included to help separate renders from different runs
     )
