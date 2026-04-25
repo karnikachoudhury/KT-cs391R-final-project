@@ -81,7 +81,7 @@ class ICM(nn.Module):
         forward_loss = forward_error.mean()
 
         # intrinsic reward
-        r_int = (self.forward_scale * forward_error).detach() # detach so no backprop
+        r_int = (self.forward_scale * forward_error).detach() 
 
         loss = (1 - self.beta) * inverse_loss + self.beta * forward_loss 
 

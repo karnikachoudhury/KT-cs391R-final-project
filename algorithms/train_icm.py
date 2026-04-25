@@ -13,11 +13,7 @@ from icm import ICM
 from icm_integration import ICMIntegration
 import faulthandler
 
-
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
-
+# create ICM environment and return instance of integration wrapper
 def make_icm_env(
     horizon: int,
     dense_reward: bool,
@@ -58,10 +54,8 @@ def make_icm_env(
     return _make
 
 
-# ---------------------------------------------------------------------------
-# Callback
-# ---------------------------------------------------------------------------
 
+# evaluation subclass that evaluates the current policy and saves best model
 class EvalCallback(BaseCallback):
     def __init__(
         self,
@@ -79,8 +73,8 @@ class EvalCallback(BaseCallback):
         self.best_success = -1.0
         self.last_eval_timestep = 0
 
+    # get success from info dict to be logged
     @staticmethod
-    # have used multiple keys for success, account for them
     def _extract_success_from_info(info) -> float:
         if info is None:
             return 0.0
@@ -94,6 +88,7 @@ class EvalCallback(BaseCallback):
             return float(info["is_success"])
         return 0.0
 
+    # what information we need on each step to decide when to evaluate and to compute metrics
     def _on_step(self) -> bool:
         if self.num_timesteps - self.last_eval_timestep < self.eval_freq:
             return True
@@ -176,11 +171,7 @@ class EvalCallback(BaseCallback):
 
         return True
 
-
-# ---------------------------------------------------------------------------
-# Training function
-# ---------------------------------------------------------------------------
-
+# function to train ICM
 def train_icm(
     env_horizon: int = 1000,
     env_dense_reward: bool = True,
@@ -196,9 +187,6 @@ def train_icm(
     output_dir: str = None,
     eval_freq: int = 20_000,
     n_eval_episodes: int = 10,
-    # ICM update frequency: 50 steps between updates, 10 gradient steps each.
-    # With n_envs=2 and n_steps=2048, one PPO rollout = ~4096 env steps, so the
-    # ICM gets ~800 gradient steps per rollout — enough to stay in sync with policy.
     icm_train_every: int = 50,
     icm_steps_per_update: int = 10,
     icm_batch_size: int = 256,
@@ -227,9 +215,7 @@ def train_icm(
     probe_env.close()
     print(f"obs_dim={obs_dim}, action_dim={action_dim}")
 
-    # -----------------------------------------------------------------------
-    # Shared ICM + shared optimizer across all envs
-    # -----------------------------------------------------------------------
+    # we share ICM and optimizers across the multiple environments
     shared_icm = ICM(
         obs_dim=obs_dim,
         action_dim=action_dim,
@@ -239,7 +225,7 @@ def train_icm(
 
     shared_icm_optimizer = torch.optim.Adam(shared_icm.parameters(), lr=icm_lr)
 
-    # Training envs: train_icm=True (default) so ICM weights are updated here.
+    # training env creation function, called when we need to train the multiple envs
     env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -258,15 +244,11 @@ def train_icm(
         n_envs = n_envs,
     )
 
+    # wrap in VecEnv and normalize
     vec_env = make_vec_env(env_factory, n_envs=n_envs, seed=seed)
-    # norm_reward=True: VecNormalize normalizes the PPO reward signal, which matters
-    # because the total reward (r_ext + r_int) has a shifting scale during training.
-    # Previously this was False, leaving the policy to deal with raw unbounded rewards.
-    vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
-    # Eval env: train_icm=False so evaluation runs never mutate the shared ICM weights
-    # or optimizer state. Without this, eval episodes would silently continue training
-    # the ICM, contaminating both the metrics and the learned reward signal.
+
+    # evaluation env creation function
     eval_env_factory = make_icm_env(
         horizon=env_horizon,
         dense_reward=env_dense_reward,
@@ -284,7 +266,6 @@ def train_icm(
         decay = decay,
         n_envs = n_envs
     )
-    # TODO: decay/delay math may be wrong bc of step assumptions - eval env isn'tt
     # running as often so may be ending decay differently
     eval_vec_env = make_vec_env(eval_env_factory, n_envs=1, seed=seed + 100)
     eval_vec_env = VecNormalize(
@@ -335,14 +316,10 @@ def train_icm(
     return model
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
 if __name__ == "__main__":
     faulthandler.enable()
     print("starting")
-# super large lambda, 1000 delay
+    # super large lambda, 1000 delay
     train_icm(
         env_horizon=500,
         env_dense_reward=False,

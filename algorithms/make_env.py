@@ -12,8 +12,7 @@ def make_env(horizon=200, dense_reward=True, reward_scale=None):
         reward_shaping=dense_reward,
         control_freq=20,
         horizon=horizon,
-
-        # make the task easier / more consistent at first
+        # simplest object mode for faster training - env is already quite complex with the sparse reward
         single_object_mode=2,
         object_type="can",
     )
